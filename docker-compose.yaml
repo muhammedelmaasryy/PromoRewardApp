@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:17.6
+    container_name: fawazer
+    environment:
+      POSTGRES_USER: fawazer-masry
+      POSTGRES_PASSWORD: Masry2212
+      POSTGRES_DB: fawazer
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5132:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fawazer-masry -d fawazer"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:9.6
+    container_name: Fawazer-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@demo.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  pgadmin-data:
+
