@@ -4,24 +4,31 @@ import jakarta.persistence.*;
 
 @Entity
 public class Segment {
+
     @Id
     private Integer segmentId;
-    @Column(nullable = false)
-    private Integer rewardMB;
-    @Column(nullable = false)
-    private Integer maxClaims;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PeriodType periodType;
+    private String segmentName;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "gift_id", nullable = false)
+    private Gift gift;
+
+    @Column(nullable = false)
+    private Integer maxClaimsPerDay;
+
+    @Column(nullable = false)
+    private Integer maxClaimsPerMonth;
 
     public Segment() {}
 
-    public Segment(Integer segmentId, Integer rewardMB, Integer maxClaims, PeriodType periodType) {
+    public Segment(Integer segmentId, String segmentName, Gift gift, Integer maxClaimsPerDay, Integer maxClaimsPerMonth) {
         this.segmentId = segmentId;
-        this.rewardMB = rewardMB;
-        this.maxClaims = maxClaims;
-        this.periodType = periodType;
+        this.segmentName = segmentName;
+        this.gift = gift;
+        this.maxClaimsPerDay = maxClaimsPerDay;
+        this.maxClaimsPerMonth = maxClaimsPerMonth;
     }
 
     public Integer getSegmentId() {
@@ -32,28 +39,35 @@ public class Segment {
         this.segmentId = segmentId;
     }
 
-    public Integer getRewardMB() {
-        return rewardMB;
+    public String getSegmentName() {
+        return segmentName;
     }
 
-    public void setRewardMB(Integer rewardMB) {
-        this.rewardMB = rewardMB;
+    public void setSegmentName(String segmentName) {
+        this.segmentName = segmentName;
     }
 
-    public PeriodType getPeriodType() {
-        return periodType;
+    public Gift getGift() {
+        return gift;
     }
 
-    public void setPeriodType(PeriodType periodType) {
-        this.periodType = periodType;
+    public void setGift(Gift gift) {
+        this.gift = gift;
     }
 
-    public Integer getMaxClaims() {
-        return maxClaims;
+    public Integer getMaxClaimsPerDay() {
+        return maxClaimsPerDay;
     }
 
-    public void setMaxClaims(Integer maxClaims) {
-        this.maxClaims = maxClaims;
+    public void setMaxClaimsPerDay(Integer maxClaimsPerDay) {
+        this.maxClaimsPerDay = maxClaimsPerDay;
+    }
+
+    public Integer getMaxClaimsPerMonth() {
+        return maxClaimsPerMonth;
+    }
+
+    public void setMaxClaimsPerMonth(Integer maxClaimsPerMonth) {
+        this.maxClaimsPerMonth = maxClaimsPerMonth;
     }
 }
-

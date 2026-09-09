@@ -1,0 +1,49 @@
+Requests:
+
+1. Create Gift:
+POST http://localhost:8085/api/gifts
+Content-Type: application/json
+
+{
+    "giftId": 1,
+    "giftName": "1GB Promo Bundle",
+    "rewardMb": 1000,
+    "validityHours": 24
+}
+
+2. Create Segment:
+POST http://localhost:8085/api/segments
+Content-Type: application/json
+
+{
+    "segmentId": 1,
+    "segmentName": "VIP Segment",
+    "giftId": 1,
+    "maxClaimsPerDay": 2,
+    "maxClaimsPerMonth": 5
+}
+
+3. Create Customer:
+POST http://localhost:8085/api/customers
+Content-Type: application/json
+
+{
+    "phoneNumber": "01016161512",
+    "name": "Ahmed Elmasry",
+    "segmentId": 1
+}
+
+4. Promo Inquiry:
+GET http://localhost:8085/api/promo/inquire/01016161512
+
+5. Promo Claim (Fulfillment):
+POST http://localhost:8085/api/promo/claim/01016161512
+
+6. Total Rewards Claimed:
+GET http://localhost:8085/api/promo/total/01016161512
+
+7. Get All Promo Gifts:
+GET http://localhost:8085/api/promo/all
+
+8. Get Customer's Promo Gift:
+GET http://localhost:8085/api/promo/customer/01016161512

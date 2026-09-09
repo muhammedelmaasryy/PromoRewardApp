@@ -1,82 +1,111 @@
 package com.masry.fawazer.services;
 
-import com.masry.fawazer.dtos.PromoClaimRequest;
 import com.masry.fawazer.dtos.PromoClaimResponse;
+import com.masry.fawazer.dtos.PromoInquiryResponse;
 import com.masry.fawazer.exceptions.ClaimLimitExceededException;
 import com.masry.fawazer.models.Customer;
-import com.masry.fawazer.models.PeriodType;
-import com.masry.fawazer.models.PromoClaim;
+import com.masry.fawazer.models.Gift;
 import com.masry.fawazer.models.Segment;
-import com.masry.fawazer.repositories.PromoClaimRepository;
+import com.masry.fawazer.repositories.CustomerRepository;
+import com.masry.fawazer.repositories.GiftRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.temporal.TemporalAdjusters;
+import java.util.List;
 
 @Service
 public class PromoClaimService {
 
-    private final PromoClaimRepository promoClaimRepository;
     private final CustomerService customerService;
+    private final CustomerRepository customerRepository;
+    private final GiftRepository giftRepository;
 
     @Autowired
-    public PromoClaimService(PromoClaimRepository promoClaimRepository, CustomerService customerService) {
-        this.promoClaimRepository = promoClaimRepository;
+    public PromoClaimService(CustomerService customerService, CustomerRepository customerRepository, GiftRepository giftRepository) {
         this.customerService = customerService;
+        this.customerRepository = customerRepository;
+        this.giftRepository = giftRepository;
     }
 
-    public PromoClaimResponse claimPromo(PromoClaimRequest request) {
-
-        Customer customer = customerService.getCustomerEntity(request.getPhoneNumber());
-
+    public PromoInquiryResponse inquire(String phoneNumber) {
+        Customer customer = customerService.getCustomerEntity(phoneNumber);
         Segment segment = customer.getSegment();
+        LocalDateTime now = LocalDateTime.now();
 
-        LocalDateTime windowStart = calculateWindowStart(segment.getPeriodType());
-
-        long currentPeriodClaims = promoClaimRepository.countByCustomerAndClaimedAtGreaterThanEqual(customer, windowStart);
-
-        if (currentPeriodClaims >= segment.getMaxClaims()) {
-            throw new ClaimLimitExceededException("Customer has reached the maximum of " + segment.getMaxClaims() + 
-                    " claim(s) per " + segment.getPeriodType());
+        if (customer.getFirstMonthlyClaimAt() != null
+                && now.isAfter(customer.getFirstMonthlyClaimAt().plusMonths(1))) {
+            customer.setMonthlyClaimCount(0);
+            customer.setFirstMonthlyClaimAt(null);
         }
 
-        PromoClaim newClaim = new PromoClaim();
-        newClaim.setCustomer(customer);
-        newClaim.setSegment(segment);
-        newClaim.setRewardMb(segment.getRewardMB());
-        newClaim.setClaimedAt(LocalDateTime.now());
-        
-        promoClaimRepository.save(newClaim);
+        if (customer.getMonthlyClaimCount() >= segment.getMaxClaimsPerMonth()) {
+            customerRepository.save(customer);
+            return new PromoInquiryResponse(false,
+                    "Monthly limit reached (" + segment.getMaxClaimsPerMonth() + " claim(s) per month)");
+        }
 
-        return new PromoClaimResponse(true, segment.getRewardMB(), "Promo claimed successfully!");
+        if (customer.getFirstDailyClaimAt() != null
+                && now.isAfter(customer.getFirstDailyClaimAt().plusHours(24))) {
+            customer.setDailyClaimCount(0);
+            customer.setFirstDailyClaimAt(null);
+        }
+
+        if (customer.getDailyClaimCount() >= segment.getMaxClaimsPerDay()) {
+            customerRepository.save(customer);
+            return new PromoInquiryResponse(false,
+                    "Daily limit reached (" + segment.getMaxClaimsPerDay() + " claim(s) per day)");
+        }
+
+        customerRepository.save(customer);
+        return new PromoInquiryResponse(true, "Customer is eligible for a promo claim");
+    }
+
+    @Transactional
+    public PromoClaimResponse claimPromo(String phoneNumber) {
+        PromoInquiryResponse inquiry = inquire(phoneNumber);
+
+        if (!inquiry.isEligible()) {
+            throw new ClaimLimitExceededException(inquiry.getMessage());
+        }
+
+        Customer customer = customerService.getCustomerEntity(phoneNumber);
+        Segment segment = customer.getSegment();
+        Gift gift = segment.getGift();
+        Integer rewardMb = gift != null ? gift.getRewardMb() : 0;
+        LocalDateTime now = LocalDateTime.now();
+
+        if (customer.getFirstMonthlyClaimAt() == null) {
+            customer.setFirstMonthlyClaimAt(now);
+        }
+        if (customer.getFirstDailyClaimAt() == null) {
+            customer.setFirstDailyClaimAt(now);
+        }
+
+        customer.setMonthlyClaimCount(customer.getMonthlyClaimCount() + 1);
+        customer.setDailyClaimCount(customer.getDailyClaimCount() + 1);
+        customer.setTotalRewardMb(customer.getTotalRewardMb() + rewardMb);
+
+        customerRepository.save(customer);
+
+        return new PromoClaimResponse(true, rewardMb, "Promo claimed successfully!");
     }
 
     public long getTotalRewardMb(String phoneNumber) {
         Customer customer = customerService.getCustomerEntity(phoneNumber);
-        return promoClaimRepository.findByCustomer(customer)
-                .stream()
-                .mapToLong(PromoClaim::getRewardMb)
-                .sum();
+        return customer.getTotalRewardMb() != null ? customer.getTotalRewardMb() : 0L;
     }
 
-    private LocalDateTime calculateWindowStart(PeriodType periodType) {
-        LocalDate today = LocalDate.now();
-        LocalTime midnight = LocalTime.MIDNIGHT;
+    public List<Gift> getAllPromos() {
+        return giftRepository.findAll();
+    }
 
-        return switch (periodType) {
-            case DAY -> LocalDateTime.of(today, midnight);
-            case WEEK -> {
-                LocalDate startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.SATURDAY));
-                yield LocalDateTime.of(startOfWeek, midnight);
-            }
-            case MONTH -> {
-                LocalDate startOfMonth = today.withDayOfMonth(1);
-                yield LocalDateTime.of(startOfMonth, midnight);
-            }
-        };
+    public List<Gift> getCustomersPromos(String phoneNumber) {
+        Customer customer = customerService.getCustomerEntity(phoneNumber);
+        if (customer.getSegment() != null && customer.getSegment().getGift() != null) {
+            return List.of(customer.getSegment().getGift());
+        }
+        return List.of();
     }
 }

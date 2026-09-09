@@ -1,6 +1,6 @@
 package com.masry.fawazer.dtos;
 
-import com.masry.fawazer.models.PeriodType;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -8,24 +8,28 @@ public class SegmentDTO {
     @NotNull(message = "Segment ID is required")
     private Integer segmentId;
 
-    @NotNull(message = "Reward MB is required")
-    @Positive(message = "Reward MB must be greater than 0")
-    private Integer rewardMB;
+    @NotBlank(message = "Segment name is required")
+    private String segmentName;
 
-    @NotNull(message = "Max claims is required")
-    @Positive(message = "Max claims must be greater than 0")
-    private Integer maxClaims;
+    @NotNull(message = "Gift ID is required")
+    private Integer giftId;
 
-    @NotNull(message = "Period type is required (DAY, WEEK, MONTH)")
-    private PeriodType periodType;
+    @NotNull(message = "Max claims per day is required")
+    @Positive(message = "Max claims per day must be greater than 0")
+    private Integer maxClaimsPerDay;
+
+    @NotNull(message = "Max claims per month is required")
+    @Positive(message = "Max claims per month must be greater than 0")
+    private Integer maxClaimsPerMonth;
 
     public SegmentDTO() {}
 
-    public SegmentDTO(Integer segmentId, Integer rewardMB, Integer maxClaims, PeriodType periodType) {
+    public SegmentDTO(Integer segmentId, String segmentName, Integer giftId, Integer maxClaimsPerDay, Integer maxClaimsPerMonth) {
         this.segmentId = segmentId;
-        this.rewardMB = rewardMB;
-        this.maxClaims = maxClaims;
-        this.periodType = periodType;
+        this.segmentName = segmentName;
+        this.giftId = giftId;
+        this.maxClaimsPerDay = maxClaimsPerDay;
+        this.maxClaimsPerMonth = maxClaimsPerMonth;
     }
 
     public Integer getSegmentId() {
@@ -36,27 +40,35 @@ public class SegmentDTO {
         this.segmentId = segmentId;
     }
 
-    public Integer getRewardMB() {
-        return rewardMB;
+    public String getSegmentName() {
+        return segmentName;
     }
 
-    public void setRewardMB(Integer rewardMB) {
-        this.rewardMB = rewardMB;
+    public void setSegmentName(String segmentName) {
+        this.segmentName = segmentName;
     }
 
-    public Integer getMaxClaims() {
-        return maxClaims;
+    public Integer getGiftId() {
+        return giftId;
     }
 
-    public void setMaxClaims(Integer maxClaims) {
-        this.maxClaims = maxClaims;
+    public void setGiftId(Integer giftId) {
+        this.giftId = giftId;
     }
 
-    public PeriodType getPeriodType() {
-        return periodType;
+    public Integer getMaxClaimsPerDay() {
+        return maxClaimsPerDay;
     }
 
-    public void setPeriodType(PeriodType periodType) {
-        this.periodType = periodType;
+    public void setMaxClaimsPerDay(Integer maxClaimsPerDay) {
+        this.maxClaimsPerDay = maxClaimsPerDay;
+    }
+
+    public Integer getMaxClaimsPerMonth() {
+        return maxClaimsPerMonth;
+    }
+
+    public void setMaxClaimsPerMonth(Integer maxClaimsPerMonth) {
+        this.maxClaimsPerMonth = maxClaimsPerMonth;
     }
 }

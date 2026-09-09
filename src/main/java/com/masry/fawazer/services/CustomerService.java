@@ -36,7 +36,13 @@ public class CustomerService {
 
     public CustomerDTO getCustomer(String phoneNumber) {
         Customer customer = getCustomerEntity(phoneNumber);
-        return new CustomerDTO(customer.getPhoneNumber(), customer.getName(), customer.getSegment().getSegmentId());
+        return new CustomerDTO(customer.getPhoneNumber(), customer.getName(),
+                customer.getSegment().getSegmentId(),
+                customer.getDailyClaimCount(),
+                customer.getFirstDailyClaimAt(),
+                customer.getMonthlyClaimCount(),
+                customer.getFirstMonthlyClaimAt(),
+                customer.getTotalRewardMb());
     }
 
     // For internal service-to-service use — returns the entity, not the DTO
@@ -47,7 +53,13 @@ public class CustomerService {
 
     public List<CustomerDTO> getAllCustomers() {
         return customerRepository.findAll().stream()
-                .map(customer -> new CustomerDTO(customer.getPhoneNumber(), customer.getName(), customer.getSegment().getSegmentId()))
+                .map(customer -> new CustomerDTO(customer.getPhoneNumber(), customer.getName(),
+                        customer.getSegment().getSegmentId(),
+                        customer.getDailyClaimCount(),
+                        customer.getFirstDailyClaimAt(),
+                        customer.getMonthlyClaimCount(),
+                        customer.getFirstMonthlyClaimAt(),
+                        customer.getTotalRewardMb()))
                 .toList();
     }
 
